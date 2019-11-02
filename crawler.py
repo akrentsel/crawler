@@ -3,16 +3,18 @@ import requests
 from lxml import html
 from collections import deque, Counter
 from urllib.parse import urlparse
+from progress.bar import Bar
+
+patterns_to_avoid = [':']
 
 def crawl(count=10, debug=False):
-    # extractor = URLExtract()
+    bar = Bar('Crawling', max=count)
     link_queue = deque()
-    link_queue.append('https://en.wikipedia.org/wiki/Main_Page')
-
+    link_queue.append('https://en.wikipedia.org/wiki/University_of_California,_Berkeley')
     ref_count = Counter()
 
     while count > 0 and link_queue:
-        print(count)
+        bar.next()
         count-=1
         # 1. Get the next URL in the queue
         url = link_queue.popleft();
@@ -35,10 +37,8 @@ def crawl(count=10, debug=False):
             # Ignore non-wiki URLs
             if not o.path.startswith('/wiki/'):
                 continue
-            # if o.path.startswith('/wiki/List_of_Wikipedias'):
-                # print(url)
-                # return
-                # print(o)
+            if o.path.find(':') >= 0:
+                continue
             if debug:
                 print(linked_url)
             # Take the part after '/wiki/'
@@ -47,8 +47,9 @@ def crawl(count=10, debug=False):
                 link_queue.append('https://en.wikipedia.org' + o.geturl())
             ref_count[item_ref] += 1
 
+    bar.finish()
     return ref_count
 
-ref_count = crawl(count=10)
+ref_count = crawl(count=1000)
 
-print(ref_count.most_common(20))
+print(ref_count.most_common(50))
